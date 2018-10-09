@@ -1,4 +1,4 @@
-"""Take in a halo catalog and perform splits on it.
+"""Take in a halo catalog and perform splits on it, and measure correlation functions.
 """
 import numpy as np
 

@@ -1,3 +1,5 @@
+#Written by Rafael Garcia-Mar.
+
 import numpy as np
 import Corrfunc
 import math
