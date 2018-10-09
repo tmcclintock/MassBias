@@ -69,6 +69,9 @@ class halo_catalog(object):
             self.dm_array = dm_array
             return dm_array
         else:
+            if dm_path[-4:] == ".npy":
+                dm_array = np.load(dm_path)
+                return dm_array
             dmdf = pd.read_csv(inpath, dtype='float64', delim_whitespace=True)
             dm = dmdf.as_matrix()
             dm_array = np.copy(dm, order='C')
@@ -106,16 +109,15 @@ class halo_catalog(object):
         unique_indices = np.unique(indices)
         cf_out = np.zeros((len(unique_indices), pc_dict['nbins']))
         covs_out = np.zeros((len(unique_indices), pc_dict['nbins'], pc_dict['nbins']))
-        """
         import cross_correlation
-        for i in len(unique_indices):
-            inds = (indices==unique_indices[i])
+        for i,ind in enumerate(unique_indices):
+            inds = (indices==ind)
             halo_pos_i = np.copy(halo_pos[inds], order='C')
-            xi, cov = cross_correlation.cross_tpcf(d1=dm_pos, d2=halo_pos_i,
-                                                   boxsize=pc_dict['L'], gridsize=pc_dict['l'],
-                                                   minsep=pc_dict['minsep'],maxsep=pc_dict['maxsep'],
-                                                   nbins=pc_dict['nbins'],nthreads=pc_dict['nthreads'],
-                                                   jk_estimates=False)
+            xi, cov = cross_correlation.cross_tpcf_jk(d1=dm_pos, d2=halo_pos_i,
+                                                      boxsize=pc_dict['L'], gridsize=pc_dict['l'],
+                                                      minsep=pc_dict['minsep'],maxsep=pc_dict['maxsep'],
+                                                      nbins=pc_dict['nbins'],nthreads=pc_dict['nthreads'],
+                                                      jk_estimates=False)
             cf_out[i] = xi
             covs_out[i] = cov
             continue
@@ -127,7 +129,6 @@ class halo_catalog(object):
         self.radial_midpoints = rm
         self.cfs = cf_out
         self.covs = covs_out
-        """
         return
         
 if __name__ == "__main__":
@@ -138,4 +139,6 @@ if __name__ == "__main__":
     print(cat.number_per_bin)
     print(cat.mean_masses)
     print(cat.mean_observable)
-    cat.calculate_hmcfs([0])
+    dmpath = "testdata/dmparticles_009.npy"
+    cat.calculate_hmcfs(dm_path = dmpath)
+    print("Completed all paircounting")

@@ -1,3 +1,6 @@
+#testdata
+testdata/*.npy
+
 # emacs backup files
 *~
 
