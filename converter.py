@@ -125,5 +125,16 @@ class cf2ds_converter(object):
         return ct.averaging.average_profile_in_bins(R_edges, R, DS)
 
 if __name__ == "__main__":
+    #Fox cosmology
+    Om = 0.318
+    h = 0.6704
+    Ob = 0.049
+    ns = 0.962
+
     #load in some test data here
+    k = np.loadtxt("testdata/k.txt")
+    Plin = np.loadtxt("testdata/plin_z3.txt")
+    Pnl = np.loadtxt("testdata/pnl_z3.txt") #z=0
     
+
+

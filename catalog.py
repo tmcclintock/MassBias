@@ -99,9 +99,9 @@ class halo_catalog(object):
         obs   = halos[:,index]
         indices = np.digitize(obs, edges, False)
         if pc_dict is None:
-            pc_dict = {"ndivs":2,
+            pc_dict = {"ndivs":10,
                        "L":1050.,     #size of box
-                       "l":1050./2.,  #subregion size
+                       "l":1050./10.,  #subregion size
                        "minsep":0.1,  #minimum separation in box
                        "maxsep":100., #maximum separation in box
                        "nbins":50,    #number of bins
@@ -122,7 +122,7 @@ class halo_catalog(object):
             covs_out[i] = cov
             continue
         #Radial bin edges
-        r = np.logspace(np.log10(pc_dict['minsep']), np.log10(pc_dict['maxsep']), nbins+1)
+        r = np.logspace(np.log10(pc_dict['minsep']), np.log10(pc_dict['maxsep']), pc_dict['nbins']+1)
         #Radial midpoints
         rm = (r[1:] + r[:-1])/2
         self.radial_bin_edges = r
@@ -142,3 +142,7 @@ if __name__ == "__main__":
     dmpath = "testdata/dmparticles_009.npy"
     cat.calculate_hmcfs(dm_path = dmpath)
     print("Completed all paircounting")
+    r = cat.radial_midpoints
+    cfs = cat.cfs
+    np.savetxt("testdata/r.txt",r)
+    np.save("testdata/hmcfs_z009", cfs)
