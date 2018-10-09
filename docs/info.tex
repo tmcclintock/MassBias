@@ -30,7 +30,7 @@
 
 In galaxy cluster analysis, the mass bias is defined as the difference between a cluster's true mass $M_{\rm true}$ and its observed (i.e. measured) mass $M_{\rm obs}$, written as $\Delta M = M_{\rm obs}-M_{\rm true}$. Sometimes this is written as a ratio: $\mathcal{C} = M_{\rm true}/M_{\rm obs} = 1-\Delta M/M_{\rm obs}$.
 
-When measuring galaxy cluster masses, a mass bias is caused by systematics, sometimes in combination with each other. Specifically, the mass bias is caused by systematics that are unaccounted for which affects observations of the cluster. Let's take stacked weak gravitational lensing as an example. For stacked lensing, the mass $M$ we are measuring is the average mass of the stack.
+When measuring galaxy cluster masses, a mass bias is caused by systematics, sometimes in combination with each other. Specifically, the mass bias is caused by systematics that are unaccounted for which affect observations of the cluster. Let's take stacked weak gravitational lensing as an example. For stacked lensing, the mass $M$ we are measuring is the average mass of the stack.
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 \vspace{12pt}
@@ -76,7 +76,7 @@ where $C$ is the covariance matrix, and $\ds(\model)$ is our model for the lensi
 \noindent
 {\bf Measuring mass bias}
 
-Using simulations, we can estimate the mass bias and correct for it. An $N$-body simulation evolves the positions of dark matter particles from high redshift to present day. Those particles interact gravitationally, and can virialize to form bound dark matter halos, which are known to host galaxy clusters. So, in a simulation, we have to sets of data, positions of dark matter particles $\vec{r}_{\rm dm}$ and halo catalogs that consist of positions and masses of the halos $\{\vec{r}_{\rm h}, M\}_i, i\in[1,...,N_{\rm h}]$.
+Using simulations, we can estimate the mass bias and correct for it. An $N$-body simulation evolves the positions of dark matter particles from high redshift to present day. Those particles interact gravitationally, and can collapse to form bound dark matter halos, which are known to host galaxy clusters. So, in a simulation, we have two sets of data, positions of dark matter particles $\vec{r}_{\rm dm}$ and halo catalogs that consist of positions and masses of the halos $\{\vec{r}_{\rm h}, M\}_i, i\in[1,...,N_{\rm h}]$.
 
 Galaxy clusters are identified not by their mass, but by some observable quantity, such as richness $\lambda$. Assuming we have a decent model for $P(\lambda|M)$, we can draw from this distribution and assign each halo a richness $\lambda_i$. Now, by grouping halos in bins of observable, we can make simulated stacks that have the same properties as the real data.
 
@@ -87,9 +87,9 @@ With our dark matter particle positions and halo catalog, one thing we can measu
 	\xi_{\rm}(r) = \frac{D_hD_{dm}(r)}{RR(r)} - 1\,.
 \end{equation}
 %
-In this equation, $D_hD_{dm}(r)$ is the number of halo-particle pairs at a distance $r = ||\vec{r}_{\rm h} - \vec{r}_{\rm dm}|| $. $RR(r)$ is the number of pairs of random points separated by $r$. This equation assumes that the number densities have all be scaled correctly, but these are all gritty details. Pair counting is usually done by a specialized code, such as \href{https://github.com/manodeep/Corrfunc}{Corrfunc} or \href{https://github.com/rmjarvis/TreeCorr}{TreeCorr}. The details of the implementations of those codes is beyond the scope of this summary, and we can assume that the $\xi_{\rm hm}$ we get out is correct.
+In this equation, $D_hD_{dm}(r)$ is the number of halo-particle pairs at a distance $r = ||\vec{r}_{\rm h} - \vec{r}_{\rm dm}|| $. $RR(r)$ is the number of pairs of random points separated by $r$. This equation assumes that the number densities have all been scaled correctly, but these are details we don't need to worry about. Pair counting is usually done by a specialized code, such as \href{https://github.com/manodeep/Corrfunc}{Corrfunc} or \href{https://github.com/rmjarvis/TreeCorr}{TreeCorr}. The details of the implementations of those codes is beyond the scope of this summary, and we can assume that the $\xi_{\rm hm}$ we get out is correct.
 
-At this point, we have halo-matter correlation functions for stacks of halos binned by some quantity in the simulation. We can convert this into a simulated $\hat{\Delta\Sigma}$ profile following \autoref{eq:deltasigma_def} and \autoref{eq:sigma_def}. That is, we integrate the correlation function along the line-of-sight to compute $\Sigma(R)$, from which we can compute $\hat{\ds}$. There are some details about how to extrapolate $\xi_{\rm hm}(r)$ to very small scales, but they are also a minor detail. For reference, in this package, the halo profile snaps to an NFW profile at those small scales, even though this profile isn't totally correct.
+At this point, we have halo-matter correlation functions for stacks of halos binned by some quantity in the simulation. We can convert this into a simulated $\hat{\Delta\Sigma}$ profile following \autoref{eq:deltasigma_def} and \autoref{eq:sigma_def}. That is, we integrate the correlation function along the line-of-sight to compute $\Sigma(R)$, from which we can compute $\hat{\ds}$. There are some details about how to extrapolate $\xi_{\rm hm}(r)$ to very small scales, but this is too minor for this discussion. For reference, in this package, the halo profile snaps to an NFW profile at those small scales, even though this profile isn't totally correct.
 
 Finally, we plug our simulated profile $\hat{\ds}$ into \autoref{eq:likelihood} and measure the halo mass. Since we know the masses of the halos in the simulations, we know $M_{\rm true}$. The mass we recover is $M_{\rm obs}$, meaning we have an estimate of the mass bias $\mathcal{C}$. More specifically, we have a full posterior for $\mathcal{C}$, which includes a mean and variance.
 
