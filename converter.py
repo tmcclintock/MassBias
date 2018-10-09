@@ -128,7 +128,7 @@ class cf2ds_converter(object):
 
 if __name__ == "__main__":
     #Load in the halo catalog
-    data = np.load("testdata/reduced_halos_lamobs_009.npy")
+    data = np.load("testdata/reduced_halos_lamobs_0.20sigintr_009.npy")
     bins = np.array([20,30,45,60,999])
     cat = halo_catalog(data, bins)
     masses = cat.mean_masses
@@ -152,9 +152,6 @@ if __name__ == "__main__":
     Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
 
     import matplotlib.pyplot as plt
-    plt.loglog(r, hmcfs[0])
-    plt.show()
-    exit()
     for i in range(len(masses)):
         if i <1: continue
         xi = hmcfs[i]
@@ -162,7 +159,8 @@ if __name__ == "__main__":
         conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
         conv.calc_concentration()
         conv.calc_xihm_model(rmodel)
-        plt.loglog(r, xi)
         plt.loglog(rmodel, conv.xim)
+        plt.loglog(r, xi)
+
         plt.show()
         exit()
