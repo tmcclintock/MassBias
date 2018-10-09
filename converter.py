@@ -147,17 +147,22 @@ if __name__ == "__main__":
     #Load in some hmcfs.
     r = np.loadtxt("testdata/r.txt")
     hmcfs = np.load("testdata/hmcfs_z009.npy")
+    
     rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
     Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
 
     import matplotlib.pyplot as plt
+    plt.loglog(r, hmcfs[0])
+    plt.show()
+    exit()
     for i in range(len(masses)):
+        if i <1: continue
         xi = hmcfs[i]
         conv = cf2ds_converter(r, xi, masses[i])
         conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
         conv.calc_concentration()
-        xim = conv.calc_xihm_model(rmodel)
+        conv.calc_xihm_model(rmodel)
         plt.loglog(r, xi)
-        plt.loglog(rmodel, xim)
+        plt.loglog(rmodel, conv.xim)
         plt.show()
         exit()
