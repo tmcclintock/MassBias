@@ -93,8 +93,6 @@ class halo_catalog(object):
         halos = self.halos
         halo_pos = halos[:, :3]
         halo_pos = np.copy(halo_pos, order='C')
-        print(np.max(halo_pos,0))
-        exit()
         edges  = self.binning
         index = self.index
         #Pick out the observable we are splitting on
@@ -113,7 +111,6 @@ class halo_catalog(object):
         covs_out = np.zeros((len(unique_indices), pc_dict['nbins'], pc_dict['nbins']))
         import cross_correlation
         for i,ind in enumerate(unique_indices):
-            if i > 0: continue
             inds = (indices==ind)
             halo_pos_i = np.copy(halo_pos[inds], order='C')
             xi, cov = cross_correlation.cross_tpcf_jk(d1=dm_pos, d2=halo_pos_i,
@@ -136,7 +133,7 @@ class halo_catalog(object):
         
 if __name__ == "__main__":
     print("Testing")
-    data = np.load("testdata/reduced_halos_lamobs_009.npy")
+    data = np.load("testdata/reduced_halos_lamobs_0.20sigintr_009.npy")
     bins = np.array([20,30,45,60,999])
     cat = halo_catalog(data, bins)
     print(cat.number_per_bin)
