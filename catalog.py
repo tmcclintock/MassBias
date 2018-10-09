@@ -75,19 +75,59 @@ class halo_catalog(object):
             self.dm_array = dm_array
             return dm_array
 
-    def calculate_hmcfs(self, dm_array=None, dm_path=None):
+    def calculate_hmcfs(self, dm_array=None, dm_path=None, pc_dict=None, save_covs=False, jk_estimates=False):
         """Calculate the halo-matter correlation function.
         
         Args:
             dm_array (array like): DM particle positions
             dm_path (string): Path to a file with DM particle positions.
+            pc_dict (dict): Holds the details of the pair counting.
+            save_covs (bool): Flag to save the covariance matrices.
+            jk_estimates (bool): Flag to get the jackknife estimates
 
         """
         dm_pos = self.get_dm_particles(dm_array, dm_path)
         halos = self.halos
         halo_pos = halos[:, :3]
         halo_pos = np.copy(halo_pos, order='C')
-        import auto_correlation, cross_correlation
+        edges  = self.binning
+        index = self.index
+        #Pick out the observable we are splitting on
+        obs   = halos[:,index]
+        indices = np.digitize(obs, edges, False)
+        if pc_dict is None:
+            pc_dict = {"ndivs":2,
+                       "L":1050.,     #size of box
+                       "l":1050./2.,  #subregion size
+                       "minsep":0.1,  #minimum separation in box
+                       "maxsep":100., #maximum separation in box
+                       "nbins":50,    #number of bins
+                       "nthreads":12} #number of threads
+        unique_indices = np.unique(indices)
+        cf_out = np.zeros((len(unique_indices), pc_dict['nbins']))
+        covs_out = np.zeros((len(unique_indices), pc_dict['nbins'], pc_dict['nbins']))
+        """
+        import cross_correlation
+        for i in len(unique_indices):
+            inds = (indices==unique_indices[i])
+            halo_pos_i = np.copy(halo_pos[inds], order='C')
+            xi, cov = cross_correlation.cross_tpcf(d1=dm_pos, d2=halo_pos_i,
+                                                   boxsize=pc_dict['L'], gridsize=pc_dict['l'],
+                                                   minsep=pc_dict['minsep'],maxsep=pc_dict['maxsep'],
+                                                   nbins=pc_dict['nbins'],nthreads=pc_dict['nthreads'],
+                                                   jk_estimates=False)
+            cf_out[i] = xi
+            covs_out[i] = cov
+            continue
+        #Radial bin edges
+        r = np.logspace(np.log10(pc_dict['minsep']), np.log10(pc_dict['maxsep']), nbins+1)
+        #Radial midpoints
+        rm = (r[1:] + r[:-1])/2
+        self.radial_bin_edges = r
+        self.radial_midpoints = rm
+        self.cfs = cf_out
+        self.covs = covs_out
+        """
         return
         
 if __name__ == "__main__":
