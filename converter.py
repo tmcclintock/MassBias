@@ -1,5 +1,6 @@
 """Take in correlation functions and a true mass and compute DeltaSigma profiles.
 """
+from catalog import *
 import numpy as np
 import cluster_toolkit as ct
 
@@ -28,6 +29,7 @@ class cf2ds_converter(object):
         return
 
     def calc_concentration(self):
+        M = self.Mtrue
         c = ct.concentration.concentration_at_M(M, self.k, self.Plin,
                                                 self.ns, self.Omega_b,
                                                 self.Omega_m, self.h,
@@ -125,6 +127,12 @@ class cf2ds_converter(object):
         return ct.averaging.average_profile_in_bins(R_edges, R, DS)
 
 if __name__ == "__main__":
+    #Load in the halo catalog
+    data = np.load("testdata/reduced_halos_lamobs_009.npy")
+    bins = np.array([20,30,45,60,999])
+    cat = halo_catalog(data, bins)
+    masses = cat.mean_masses
+
     #Fox cosmology
     Om = 0.318
     h = 0.6704
@@ -136,5 +144,20 @@ if __name__ == "__main__":
     Plin = np.loadtxt("testdata/plin_z3.txt")
     Pnl = np.loadtxt("testdata/pnl_z3.txt") #z=0
     
+    #Load in some hmcfs.
+    r = np.loadtxt("testdata/r.txt")
+    hmcfs = np.load("testdata/hmcfs_z009.npy")
+    rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
+    Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
 
-
+    import matplotlib.pyplot as plt
+    for i in range(len(masses)):
+        xi = hmcfs[i]
+        conv = cf2ds_converter(r, xi, masses[i])
+        conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
+        conv.calc_concentration()
+        xim = conv.calc_xihm_model(rmodel)
+        plt.loglog(r, xi)
+        plt.loglog(rmodel, xim)
+        plt.show()
+        exit()

@@ -46,7 +46,7 @@ class halo_catalog(object):
         index = self.index
         obs   = halos[:,index] #Obseravble
         indices = np.digitize(obs, edges, False)
-        Om = np.array([np.mean(obs[(indices==i)]) for i in range(len(edges)-1)])
+        Om = np.array([np.mean(obs[(indices==i)]) for i in range(len(edges))])
         self.mean_observable = Om
         return Om
 
@@ -58,7 +58,7 @@ class halo_catalog(object):
         M     = halos[:,3] #Mass
         obs   = halos[:,index] #Obseravble
         indices = np.digitize(obs, edges, False)
-        Mm = np.array([np.mean(M[(indices==i)]) for i in range(len(edges)-1)])
+        Mm = np.array([np.mean(M[(indices==i)]) for i in range(len(edges))])
         self.mean_masses = Mm
         return Mm
 
@@ -140,6 +140,7 @@ if __name__ == "__main__":
     print(cat.mean_masses)
     print(cat.mean_observable)
     dmpath = "testdata/dmparticles_009.npy"
+    exit()
     cat.calculate_hmcfs(dm_path = dmpath)
     print("Completed all paircounting")
     r = cat.radial_midpoints
