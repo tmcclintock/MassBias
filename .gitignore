@@ -1,3 +1,7 @@
+# latex stuff
+*.aux
+*.gz
+
 #testdata
 testdata/*.npy
 
