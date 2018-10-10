@@ -133,16 +133,22 @@ class halo_catalog(object):
         
 if __name__ == "__main__":
     print("Testing")
-    data = np.load("testdata/reduced_halos_lamobs_0.20sigintr_009.npy")
+    sigs = np.arange(0.05, 0.45, step=0.05)
+    inds = [6,7,8,9]
     bins = np.array([20,30,45,60,999])
-    cat = halo_catalog(data, bins)
-    print(cat.number_per_bin)
-    print(cat.mean_masses)
-    print(cat.mean_observable)
-    dmpath = "testdata/dmparticles_009.npy"
-    cat.calculate_hmcfs(dm_path = dmpath)
-    print("Completed all paircounting")
-    r = cat.radial_midpoints
-    cfs = cat.cfs
-    np.savetxt("testdata/r.txt",r)
-    np.save("testdata/hmcfs_z009", cfs)
+    hpath = "/calvin1/matthewkirby/for-tom/reduced_halos_lamobs_%.2fsigintr_%03d.npy"
+    dmpath = "/calvin1/tmcclintock/down_sampled_snapshots/fox_snaps/snapshot_z%03d_ds100.npy"
+    for sig,ind in zip(sigs,inds):
+        #data = np.load("testdata/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
+        data = np.load(hpath%(sig,ind))
+        cat = halo_catalog(data, bins)
+        print(cat.number_per_bin)
+        print(cat.mean_masses)
+        print(cat.mean_observable)
+        #dmpath = "testdata/dmparticles_%03d.npy"%(ind)
+        cat.calculate_hmcfs(dm_path = dmpath%(ind))
+        print("Completed all paircounting")
+        r = cat.radial_midpoints
+        cfs = cat.cfs
+        np.savetxt("testdata/r.txt",r)
+        np.save("testdata/hmcfs_z009", cfs)

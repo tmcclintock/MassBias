@@ -3,6 +3,7 @@
 from catalog import *
 import numpy as np
 import cluster_toolkit as ct
+from scipy.interpolate import InterpolatedUnivariateSpline as IUS
 
 class cf2ds_converter(object):
     def __init__(self, r, hmcf, Mtrue):
@@ -50,7 +51,7 @@ class cf2ds_converter(object):
         return
 
         
-    def make_fixed_hmcf(self, lowcut=0.2, highcut=80.):
+    def make_fixed_hmcf(self, lowcut=0.1, highcut=80.):
         """Clip the data at the ends and insert it into a model curve.
         """
         rm = self.rmodel
@@ -59,29 +60,23 @@ class cf2ds_converter(object):
         xi = self.hmcf
         lowcut = np.max([lowcut, r[0]])
         highcut = np.min([highcut, r[-1]])
-        rout, xiout = [], []
-        xiout = []
-        inds = (Rd > lowcut)*(xi>1e-3)*(Rd < highcut)
+        inds = (r > lowcut)*(xi>1e-3)*(r < highcut)
         r = r[inds]
         xi = xi[inds]
         ind = 0
-        for i in range(len(rm)):
-            if ind >= len(r):
-                rout.append(rm[i])
-                xiout.append(xim[i])
-                continue
-            if rm[i] < r[ind]:
-                rout.append(rm[i])
-                xiout.append(xim[i])
-                continue
-            else:
-                rout.append(r[ind])
-                xioiut.append(xi[ind])
-                ind += 1
-                continue
-            continue
-        self.r_fixed = rout
-        self.xi_fixed = xiout
+        low = rm < r[0]
+        rout = np.copy(r)
+        xiout = np.copy(xi)
+        rout = np.concatenate((rm[low], rout))
+        xiout = np.concatenate((xim[low], xiout))
+        high = rm > r[-1]
+        rout = np.concatenate((rout, rm[high]))
+        xiout = np.concatenate((xiout, xim[high]))
+        xiout_spline = IUS(rout, xiout)
+        newrout = np.logspace(np.log10(rm[0]), np.log10(rm[-1]), len(rm)*10)
+        newxiout = xiout_spline(newrout)
+        self.r_fixed = newrout
+        self.xi_fixed = newxiout
         return
     
     def calc_DS(self, r, hmcf, R):
@@ -159,8 +154,16 @@ if __name__ == "__main__":
         conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
         conv.calc_concentration()
         conv.calc_xihm_model(rmodel)
-        plt.loglog(rmodel, conv.xim)
-        plt.loglog(r, xi)
-
+        conv.make_fixed_hmcf()
+        rf = conv.r_fixed
+        xif = conv.xi_fixed
+        _, DSs = conv.calc_DS(rf, xif, Rp)
+        _, DSm = conv.calc_DS(rmodel, conv.xim, Rp)
+        #plt.loglog(rmodel, conv.xim)
+        #plt.loglog(r, xi)
+        #plt.loglog(rf, xif, c='k', ls=':')
+        plt.loglog(Rp, DSm)
+        plt.loglog(Rp, DSs, ls=':')
+        
         plt.show()
         exit()
