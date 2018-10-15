@@ -71,7 +71,7 @@ class halo_catalog(object):
         else:
             if dm_path[-4:] == ".npy":
                 dm_array = np.load(dm_path)
-                return dm_array
+                return dm_array.astype('float64')
             dmdf = pd.read_csv(inpath, dtype='float64', delim_whitespace=True)
             dm = dmdf.as_matrix()
             dm_array = np.copy(dm, order='C')
@@ -138,17 +138,18 @@ if __name__ == "__main__":
     bins = np.array([20,30,45,60,999])
     hpath = "/calvin1/matthewkirby/for-tom/reduced_halos_lamobs_%.2fsigintr_%03d.npy"
     dmpath = "/calvin1/tmcclintock/down_sampled_snapshots/fox_snaps/snapshot_z%03d_ds100.npy"
-    for sig,ind in zip(sigs,inds):
-        #data = np.load("testdata/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
-        data = np.load(hpath%(sig,ind))
-        cat = halo_catalog(data, bins)
-        print(cat.number_per_bin)
-        print(cat.mean_masses)
-        print(cat.mean_observable)
-        #dmpath = "testdata/dmparticles_%03d.npy"%(ind)
-        cat.calculate_hmcfs(dm_path = dmpath%(ind))
-        print("Completed all paircounting")
-        r = cat.radial_midpoints
-        cfs = cat.cfs
-        np.savetxt("testdata/r.txt",r)
-        np.save("testdata/hmcfs_z009", cfs)
+    for sig in sigs:
+        for ind in inds:
+            #data = np.load("testdata/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
+            data = np.load(hpath%(sig,ind))
+            cat = halo_catalog(data, bins)
+            print(cat.number_per_bin)
+            print(cat.mean_masses)
+            print(cat.mean_observable)
+            #dmpath = "testdata/dmparticles_%03d.npy"%(ind)
+            cat.calculate_hmcfs(dm_path = dmpath%(ind))
+            print("Completed all paircounting")
+            r = cat.radial_midpoints
+            cfs = cat.cfs
+            np.savetxt("testdata/r.txt",r)
+            np.save("testdata/hmcfs_z%03d_%.2fsigintr"%(ind,sig), cfs)
