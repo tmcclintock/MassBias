@@ -128,6 +128,7 @@ if __name__ == "__main__":
     sigs = np.arange(0.05, 0.45, step=0.05)
     inds = [6,7,8,9]
     bins = np.array([20,30,45,60,999])
+    zs = [1.0, 0.5, 0.25, 0.0]
     for sig in sigs:
         for ind in inds:
             data = np.load("/Users/tmcclintock/Data/halo_catalogs/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
@@ -153,7 +154,7 @@ if __name__ == "__main__":
 
             #Set up the model
             rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
-            Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
+            Rp = np.logspace(-2, 2.4, num=1000) #Mpc/h comoving
             
             DSout = np.zeros((len(masses)-1, len(Rp)))
             for i in range(len(masses)):
@@ -170,19 +171,33 @@ if __name__ == "__main__":
                 #Sytematic parameters
                 tau = 0.17 #Y1 prior
                 fmis = 0.25
+                Rlam = (lams[i]/100.)**0.2 #Mpc/h comoving
+
+                Rmis = tau*Rlam
                 zmap = [2,1,0,0] #Map from fox zi to data zi
                 zid = zmap[ind-6]
                 boostpars = np.load("boost_params.npy")
                 B0, Rs = np.load("boost_params.npy")[zid,i-1]
+                Rs *= h*(1+zs[ind-6]) #convert
                 dp1 = np.loadtxt("Y1_deltap1.txt")
                 delta_plus_1 = np.loadtxt("Y1_deltap1.txt")[zid, i+2]
                 Am = 0.012 + delta_plus_1
                 SCI = np.loadtxt("sigma_crit_inv.txt")[zid,i+2]
 
+                """
+                _, DS = conv.calc_DS(rf, xif, Rp)
+                _, DSm = conv.calc_DSmis(rf, xif, Rp, Rmis)
+                import matplotlib.pyplot as plt
+                plt.loglog(Rp, DS)
+                plt.loglog(Rp, DSm)
+                plt.show()
+                exit()
+                """
+
                 #Apply systematics and compute
                 DSs = conv.apply_systematics(rf, xif, Rp, A=Am,
                                              boostpars = [B0, Rs],
-                                             Rmis = tau*lams[i], fmis = fmis,
+                                             Rmis = Rmis, fmis = fmis,
                                              Sigma_crit_inv = SCI)
 
                 DSout[i-1] = DSs
