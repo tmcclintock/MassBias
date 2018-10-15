@@ -90,12 +90,13 @@ class cf2ds_converter(object):
         return Sigma, ct.deltasigma.DeltaSigma_at_R(R, R, Sigma, M,
                                                     self.conc, self.Omega_m)
         
-    def calc_DSmis(self, r, hmcf, R,
-                   Rmis, kernel="exponential"):
+    def calc_DSmis(self, r, hmcf, R, Rmis, kernel="exponential"):
         M = self.Mtrue
         Sigma = ct.deltasigma.Sigma_at_R(R, r, hmcf, M, self.conc, self.Omega_m)
-        Sigma_mis = ct.miscentering.Sigma_mis_at_R(R, R, Sigma, M, self.conc, self.Omega_m, Rmis, kernel)
-        return Sigma_mis, ct.miscentering.Deltasigma_mis_at_R(R, R, Sigma_mis)
+        Sigma_mis = ct.miscentering.Sigma_mis_at_R(R, R, Sigma, M, self.conc,
+                                                   self.Omega_m, Rmis,
+                                                   kernel="exponential")
+        return Sigma_mis, ct.miscentering.DeltaSigma_mis_at_R(R, R, Sigma_mis)
 
     def apply_systematics(self, r, hmcf, R, A=None,
                           boostpars = None,
@@ -103,7 +104,7 @@ class cf2ds_converter(object):
                           Sigma_crit_inv = None):
         S, DS = self.calc_DS(r, hmcf, R)
         if (Rmis is not None) and (fmis is not None):
-            Sm, DSm = self.calc_DSm(r, hmcf, R, Rmis)
+            Sm, DSm = self.calc_DSmis(r, hmcf, R, Rmis)
             S = (1-fmis)*S + fmis*Sm
             DS = (1-fmis)*DS + fmis*DSm
         if A is not None:
@@ -129,10 +130,11 @@ if __name__ == "__main__":
     bins = np.array([20,30,45,60,999])
     for sig in sigs:
         for ind in inds:
-            data = np.load("/calvin1/matthewkirby/for-tom/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
+            data = np.load("/Users/tmcclintock/Data/halo_catalogs/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
             bins = np.array([20,30,45,60,999])
             cat = halo_catalog(data, bins)
             masses = cat.mean_masses
+            lams = cat.mean_observable
 
             #Fox cosmology
             Om = 0.318
@@ -148,7 +150,8 @@ if __name__ == "__main__":
             #Load in some hmcfs.
             r = np.loadtxt("testdata/r.txt")
             hmcfs = np.load("testdata/hmcfs_z%03d_%.2fsigintr.npy"%(ind,sig))
-    
+
+            #Set up the model
             rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
             Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
             
@@ -163,8 +166,27 @@ if __name__ == "__main__":
                 conv.make_fixed_hmcf()
                 rf = conv.r_fixed
                 xif = conv.xi_fixed
-                _, DSs = conv.calc_DS(rf, xif, Rp)
+
+                #Sytematic parameters
+                tau = 0.17 #Y1 prior
+                fmis = 0.25
+                zmap = [2,1,0,0] #Map from fox zi to data zi
+                zid = zmap[ind-6]
+                boostpars = np.load("boost_params.npy")
+                B0, Rs = np.load("boost_params.npy")[zid,i-1]
+                dp1 = np.loadtxt("Y1_deltap1.txt")
+                delta_plus_1 = np.loadtxt("Y1_deltap1.txt")[zid, i+2]
+                Am = 0.012 + delta_plus_1
+                SCI = np.loadtxt("sigma_crit_inv.txt")[zid,i+2]
+
+                #Apply systematics and compute
+                DSs = conv.apply_systematics(rf, xif, Rp, A=Am,
+                                             boostpars = [B0, Rs],
+                                             Rmis = tau*lams[i], fmis = fmis,
+                                             Sigma_crit_inv = SCI)
+
                 DSout[i-1] = DSs
+
 
                 continue
             print("Done with sig%.2f ind%d"%(sig,ind))
