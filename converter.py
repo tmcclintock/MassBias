@@ -51,7 +51,7 @@ class cf2ds_converter(object):
         return
 
         
-    def make_fixed_hmcf(self, lowcut=0.1, highcut=80.):
+    def make_fixed_hmcf(self, lowcut=0.2, highcut=70.):
         """Clip the data at the ends and insert it into a model curve.
         """
         rm = self.rmodel
@@ -72,11 +72,11 @@ class cf2ds_converter(object):
         high = rm > r[-1]
         rout = np.concatenate((rout, rm[high]))
         xiout = np.concatenate((xiout, xim[high]))
-        xiout_spline = IUS(rout, xiout)
-        newrout = np.logspace(np.log10(rm[0]), np.log10(rm[-1]), len(rm)*10)
-        newxiout = xiout_spline(newrout)
-        self.r_fixed = newrout
-        self.xi_fixed = newxiout
+        #xiout_spline = IUS(rout, xiout)
+        #newrout = np.logspace(np.log10(rm[0]), np.log10(rm[-1]), len(rm)*10)
+        #newxiout = xiout_spline(newrout)
+        self.r_fixed = rout
+        self.xi_fixed = xiout
         return
     
     def calc_DS(self, r, hmcf, R):
@@ -159,11 +159,11 @@ if __name__ == "__main__":
         xif = conv.xi_fixed
         _, DSs = conv.calc_DS(rf, xif, Rp)
         _, DSm = conv.calc_DS(rmodel, conv.xim, Rp)
-        #plt.loglog(rmodel, conv.xim)
-        #plt.loglog(r, xi)
-        #plt.loglog(rf, xif, c='k', ls=':')
-        plt.loglog(Rp, DSm)
-        plt.loglog(Rp, DSs, ls=':')
+        plt.loglog(rmodel, conv.xim)
+        plt.loglog(r, xi)
+        plt.loglog(rf, xif, c='k', ls=':')
+        #plt.loglog(Rp, DSm)
+        #plt.loglog(Rp, DSs, ls=':')
         
         plt.show()
         exit()
