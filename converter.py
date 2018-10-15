@@ -123,47 +123,50 @@ class cf2ds_converter(object):
 
 if __name__ == "__main__":
     #Load in the halo catalog
-    data = np.load("testdata/reduced_halos_lamobs_0.20sigintr_009.npy")
+    #data = np.load("testdata/reduced_halos_lamobs_0.20sigintr_009.npy")
+    sigs = np.arange(0.05, 0.45, step=0.05)
+    inds = [6,7,8,9]
     bins = np.array([20,30,45,60,999])
-    cat = halo_catalog(data, bins)
-    masses = cat.mean_masses
+    for sig in sigs:
+        for ind in inds:
+            data = np.load("/calvin1/matthewkirby/for-tom/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
+            bins = np.array([20,30,45,60,999])
+            cat = halo_catalog(data, bins)
+            masses = cat.mean_masses
 
-    #Fox cosmology
-    Om = 0.318
-    h = 0.6704
-    Ob = 0.049
-    ns = 0.962
+            #Fox cosmology
+            Om = 0.318
+            h = 0.6704
+            Ob = 0.049
+            ns = 0.962
 
-    #load in some test data here
-    k = np.loadtxt("testdata/k.txt")
-    Plin = np.loadtxt("testdata/plin_z3.txt")
-    Pnl = np.loadtxt("testdata/pnl_z3.txt") #z=0
+            #load in some test data here
+            k = np.loadtxt("testdata/k.txt")
+            Plin = np.loadtxt("testdata/plin_z%d.txt"%(ind-6))
+            Pnl = np.loadtxt("testdata/pnl_z%d.txt"%(ind-6))
     
-    #Load in some hmcfs.
-    r = np.loadtxt("testdata/r.txt")
-    hmcfs = np.load("testdata/hmcfs_z009.npy")
+            #Load in some hmcfs.
+            r = np.loadtxt("testdata/r.txt")
+            hmcfs = np.load("testdata/hmcfs_z%03d_%.2fsigintr.npy"%(ind,sig))
     
-    rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
-    Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
+            rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
+            Rp = np.logspace(-3, 2.4, num=1000) #Mpc/h comoving
+            
+            DSout = np.zeros((len(masses)-1, len(Rp)))
+            for i in range(len(masses)):
+                if i <1: continue
+                xi = hmcfs[i]
+                conv = cf2ds_converter(r, xi, masses[i])
+                conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
+                conv.calc_concentration()
+                conv.calc_xihm_model(rmodel)
+                conv.make_fixed_hmcf()
+                rf = conv.r_fixed
+                xif = conv.xi_fixed
+                _, DSs = conv.calc_DS(rf, xif, Rp)
+                DSout[i-1] = DSs
 
-    import matplotlib.pyplot as plt
-    for i in range(len(masses)):
-        if i <1: continue
-        xi = hmcfs[i]
-        conv = cf2ds_converter(r, xi, masses[i])
-        conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
-        conv.calc_concentration()
-        conv.calc_xihm_model(rmodel)
-        conv.make_fixed_hmcf()
-        rf = conv.r_fixed
-        xif = conv.xi_fixed
-        _, DSs = conv.calc_DS(rf, xif, Rp)
-        _, DSm = conv.calc_DS(rmodel, conv.xim, Rp)
-        plt.loglog(rmodel, conv.xim)
-        plt.loglog(r, xi)
-        plt.loglog(rf, xif, c='k', ls=':')
-        #plt.loglog(Rp, DSm)
-        #plt.loglog(Rp, DSs, ls=':')
-        
-        plt.show()
-        exit()
+                continue
+            print("Done with sig%.2f ind%d"%(sig,ind))
+            np.savetxt("ds_testdata/Rp.txt",Rp, header="Mpc/h h=%.4f"%h)
+            np.save("ds_testdata/DSs_z%03d_%.2fsigintr"%(ind,sig), DSout)
