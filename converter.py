@@ -128,7 +128,8 @@ if __name__ == "__main__":
     sigs = np.arange(0.05, 0.45, step=0.05)
     inds = [6,7,8,9]
     bins = np.array([20,30,45,60,999])
-    zs = [1.0, 0.5, 0.25, 0.0]
+    zs = [1.0, 0.5, 0.25, 0.0]    
+    
     for sig in sigs:
         for ind in inds:
             data = np.load("/Users/tmcclintock/Data/halo_catalogs/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
@@ -155,8 +156,12 @@ if __name__ == "__main__":
             #Set up the model
             rmodel = np.logspace(-3, 3, num=1000) #Mpc/h comoving
             Rp = np.logspace(-2, 2.4, num=1000) #Mpc/h comoving
+
+            #Radial bin edges of real data; Mpc phys
+            Redges = np.logspace(np.log10(0.0323), np.log10(30.), num=15+1)
             
             DSout = np.zeros((len(masses)-1, len(Rp)))
+            DSaveout = np.zeros((len(masses)-1, 15)) #15 bin edges
             for i in range(len(masses)):
                 if i <1: continue
                 xi = hmcfs[i]
@@ -176,6 +181,7 @@ if __name__ == "__main__":
                 Rmis = tau*Rlam
                 zmap = [2,1,0,0] #Map from fox zi to data zi
                 zid = zmap[ind-6]
+                z = zs[zid]
                 boostpars = np.load("boost_params.npy")
                 B0, Rs = np.load("boost_params.npy")[zid,i-1]
                 Rs *= h*(1+zs[ind-6]) #convert
@@ -184,26 +190,19 @@ if __name__ == "__main__":
                 Am = 0.012 + delta_plus_1
                 SCI = np.loadtxt("sigma_crit_inv.txt")[zid,i+2]
 
-                """
-                _, DS = conv.calc_DS(rf, xif, Rp)
-                _, DSm = conv.calc_DSmis(rf, xif, Rp, Rmis)
-                import matplotlib.pyplot as plt
-                plt.loglog(Rp, DS)
-                plt.loglog(Rp, DSm)
-                plt.show()
-                exit()
-                """
-
                 #Apply systematics and compute
                 DSs = conv.apply_systematics(rf, xif, Rp, A=Am,
                                              boostpars = [B0, Rs],
                                              Rmis = Rmis, fmis = fmis,
                                              Sigma_crit_inv = SCI)
-
                 DSout[i-1] = DSs
 
-
+                #Convert to physical and integrate in the bins
+                DSa = conv.average_in_bins(Rp/(h*(1+z)), DSs*h*(1+z)**2, Redges)
+                DSaveout[i-1] = DSa
                 continue
             print("Done with sig%.2f ind%d"%(sig,ind))
             np.savetxt("ds_testdata/Rp.txt",Rp, header="Mpc/h h=%.4f"%h)
             np.save("ds_testdata/DSs_z%03d_%.2fsigintr"%(ind,sig), DSout)
+            np.savetxt("ds_testdata/Redges.txt", Redges)
+            np.save("ds_testdata/DSave_z%03d_%.2fsigintr"%(ind,sig), DSaveout)
