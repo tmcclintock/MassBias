@@ -10,9 +10,9 @@ class cf2ds_converter(object):
         """Constructor for the converter.
 
         Args:
-            r (array like): 3D radi of the correlation function; Mpc/h
+            r (array like): 3D radi of the correlation function; Mpc/h comoving
             hmcf (array like): Halo-matter correlation function
-            Mtrue (float): True mean mass of the stack
+            Mtrue (float): True mean mass of the stack; Msun/h
 
         """
         self.r = np.ascontiguousarray(r, dtype='float64')
@@ -120,6 +120,7 @@ class cf2ds_converter(object):
         return DS
 
     def average_in_bins(self, R, DS, R_edges):
+        #Note: R and R_edges must have the same units
         return ct.averaging.average_profile_in_bins(R_edges, R, DS)
 
 if __name__ == "__main__":
@@ -132,9 +133,10 @@ if __name__ == "__main__":
     
     for sig in sigs:
         for ind in inds:
-            data = np.load("/Users/tmcclintock/Data/halo_catalogs/reduced_halos_lamobs_%.2fsigintr_%03d.npy"%(sig,ind))
+            halopath = "/Users/tom/Data/DESY1/RMWL/fox_files/halo_catalogs/reduced_halos_lamobs_%.2fsigintr_%03d.npy"
+            halos = np.load(halopath%(sig, ind))
             bins = np.array([20,30,45,60,999])
-            cat = halo_catalog(data, bins)
+            cat = halo_catalog(halos, bins)
             masses = cat.mean_masses
             lams = cat.mean_observable
 
@@ -163,7 +165,7 @@ if __name__ == "__main__":
             DSout = np.zeros((len(masses)-1, len(Rp)))
             DSaveout = np.zeros((len(masses)-1, 15)) #15 bin edges
             for i in range(len(masses)):
-                if i <1: continue
+                if i <1: continue #skip the lam<20 bin
                 xi = hmcfs[i]
                 conv = cf2ds_converter(r, xi, masses[i])
                 conv.set_cosmology(k, Plin, Pnl, ns, Ob, Om, h)
@@ -181,16 +183,17 @@ if __name__ == "__main__":
                 Rmis = tau*Rlam
                 zmap = [2,1,0,0] #Map from fox zi to data zi
                 zid = zmap[ind-6]
-                z = zs[zid]
+                z = zs[ind-6] #z of the sim snapshot
                 boostpars = np.load("boost_params.npy")
                 B0, Rs = np.load("boost_params.npy")[zid,i-1]
-                Rs *= h*(1+zs[ind-6]) #convert
+                Rs *= h*(1+z) #convert to Mpc/h comoving
                 dp1 = np.loadtxt("Y1_deltap1.txt")
                 delta_plus_1 = np.loadtxt("Y1_deltap1.txt")[zid, i+2]
                 Am = 0.012 + delta_plus_1
                 SCI = np.loadtxt("sigma_crit_inv.txt")[zid,i+2]
 
                 #Apply systematics and compute
+                #NOTE: Rs is in Mpc/h comoving here
                 DSs = conv.apply_systematics(rf, xif, Rp, A=Am,
                                              boostpars = [B0, Rs],
                                              Rmis = Rmis, fmis = fmis,
@@ -198,8 +201,15 @@ if __name__ == "__main__":
                 DSout[i-1] = DSs
 
                 #Convert to physical and integrate in the bins
+                #Note: Rp is converted into Mpc physical
+                #Note: DeltaSigma is converted into Msun/pc^2 physical
                 DSa = conv.average_in_bins(Rp/(h*(1+z)), DSs*h*(1+z)**2, Redges)
                 DSaveout[i-1] = DSa
+                #import matplotlib.pyplot as plt
+                #plt.loglog(Rp/(h*(1+z)), DSout[i-1]*h*(1+z)**2)
+                #plt.loglog((Redges[1:]+Redges[:-1])/2, DSaveout[i-1])
+                #plt.show()
+                #exit()
                 continue
             print("Done with sig%.2f ind%d"%(sig,ind))
             np.savetxt("ds_testdata/Rp.txt",Rp, header="Mpc/h h=%.4f"%h)
