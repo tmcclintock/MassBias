@@ -1,1 +1,0 @@
-Here I convert xi_hm to Sigma(R) and DeltaSigma(R) for Eduardo and Youngsoo's work. I use the central aemulus box (index 34).
